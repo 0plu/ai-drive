@@ -66,6 +66,12 @@
           @click="toggleTheme"
         />
       </el-tooltip>
+      <!-- AI 助手按钮 -->
+      <el-tooltip content="AI 助手" placement="bottom">
+        <el-button class="header-action-btn ai-btn" circle text @click="aiStore.openGlobalPanel()">
+          <el-icon><MagicStick /></el-icon>
+        </el-button>
+      </el-tooltip>
       <!-- 移动端：搜索按钮 -->
       <el-button class="mobile-search-btn" icon="Search" circle text @click="showSearchDialog = true" />
       <!-- 移动端：Logo -->
@@ -151,7 +157,7 @@
   const { proxy } = getCurrentInstance() as ComponentInternalInstance
   const { t } = useI18n()
 
-  import { useUserStore, useAuthStore, useLayoutStore } from '@/stores'
+  import { useUserStore, useAuthStore, useLayoutStore, useAiStore } from '@/stores'
   import HorizontalMenu from '../HorizontalMenu/index.vue'
 
   const router = useRouter()
@@ -159,6 +165,7 @@
   const userStore = useUserStore()
   const authStore = useAuthStore()
   const layoutStore = useLayoutStore()
+  const aiStore = useAiStore()
 
   // 是否显示水平菜单
   // - 水平布局：显示水平菜单
@@ -542,6 +549,27 @@
   }
 
   /* 主题切换按钮保持原有样式，但继承 header-action-btn 的基础样式 */
+
+  /* AI 助手按钮特殊样式 */
+  .ai-btn {
+    color: #6366f1;
+    transition: all 0.3s ease;
+  }
+
+  .ai-btn:hover {
+    color: #4f46e5;
+    background: rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+  }
+
+  html.dark .ai-btn {
+    color: #a5b4fc;
+  }
+
+  html.dark .ai-btn:hover {
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.15);
+  }
 
   .mobile-search-btn {
     display: none !important;

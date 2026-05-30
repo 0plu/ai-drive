@@ -1,0 +1,15 @@
+./CompactIPv4NodeAddrs.go
+./CompactIPv4NodeInfo.go
+./CompactIPv6NodeAddrs.go
+./CompactIPv6NodeInfo.go
+./bep33.go
+./bep46.go
+./compact-infohashes.go
+./compact_helpers.go
+./error.go
+./id.go
+./msg.go
+./node-addr-port.go
+./node-info-new.go
+./nodeaddr.go
+./nodeinfo.go

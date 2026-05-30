@@ -1,0 +1,12 @@
+./deadline.go
+./expvars.go
+./logging.go
+./status.go
+_cgo_gotypes.go
+callbacks.cgo1.go
+conn.cgo1.go
+libapi.cgo1.go
+sockaddr.cgo1.go
+socket.cgo1.go
+utp.cgo1.go
+_cgo_import.go

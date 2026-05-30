@@ -1,0 +1,3 @@
+./auth.go
+./filesystem.go
+./server.go

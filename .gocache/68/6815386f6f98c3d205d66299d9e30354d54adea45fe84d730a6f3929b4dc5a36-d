@@ -1,0 +1,8 @@
+./blake3_hasher_test.go
+./file_enc_benchmark_test.go
+./file_enc_util_test.go
+./instant_upload_test.go
+./repository_crud_test.go
+./rsa_util_test.go
+./upload_test.go
+./utils_test.go

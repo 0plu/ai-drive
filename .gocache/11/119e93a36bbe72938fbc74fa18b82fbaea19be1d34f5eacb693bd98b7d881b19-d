@@ -1,0 +1,6 @@
+./blob-readwriter.go
+./exec.go
+./pool.go
+./query.go
+./savepoint.go
+./snapshot.go

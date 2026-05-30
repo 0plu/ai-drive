@@ -1,0 +1,11 @@
+./compactip.go
+./decoder.go
+./extended.go
+./handshake.go
+./int.go
+./messagetype_string.go
+./metadata.go
+./msg.go
+./pex.go
+./protocol.go
+./reqspec.go

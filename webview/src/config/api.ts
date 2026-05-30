@@ -153,6 +153,14 @@ export const API_ENDPOINTS = {
     }
   },
 
+  // AI
+  AI: {
+    SUMMARIZE: '/ai/summarize',
+    SUMMARIZE_STREAM: '/ai/summarize/stream',
+    CHAT: '/ai/chat',
+    CHAT_STREAM: '/ai/chat/stream'
+  },
+
   // 打包下载
   PACKAGE: {
     CREATE: '/file/package/create',

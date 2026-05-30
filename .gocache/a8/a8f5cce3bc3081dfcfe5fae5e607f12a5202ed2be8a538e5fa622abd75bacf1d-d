@@ -1,0 +1,12 @@
+./buffered_reader.go
+./cursor_windows.go
+./display.go
+./display_windows.go
+./error.go
+./output_windows.go
+./runereader.go
+./runereader_windows.go
+./sequences.go
+./stdio.go
+./syscall_windows.go
+./terminal.go

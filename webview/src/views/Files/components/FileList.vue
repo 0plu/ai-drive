@@ -98,6 +98,7 @@
                       {{ row.public ? t('files.cancelPublic') : t('files.setPublic') }}
                     </el-dropdown-item>
                     <el-dropdown-item command="delete" icon="Delete" divided>{{ t('files.delete') }}</el-dropdown-item>
+                    <el-dropdown-item command="ai-analyze" icon="MagicStick" divided>✨ AI分析</el-dropdown-item>
                   </template>
                   <template v-else>
                     <el-dropdown-item command="rename" icon="Edit">{{ t('files.rename') }}</el-dropdown-item>
@@ -113,6 +114,8 @@
 
     <!-- 移动端：卡片布局 -->
     <div v-else class="mobile-file-list">
+
+
       <div
         v-for="row in tableData"
         :key="row.isFolder ? `folder-${row.id}` : `file-${row.file_id}`"
@@ -122,6 +125,8 @@
       >
         <div class="mobile-item-content">
           <div class="mobile-item-icon">
+
+
             <!-- 文件夹图标 -->
             <el-icon v-if="row.isFolder" :size="40" class="mobile-folder-icon">
               <Folder />
@@ -193,6 +198,7 @@
                       {{ row.public ? t('files.cancelPublic') : t('files.setPublic') }}
                     </el-dropdown-item>
                     <el-dropdown-item command="delete" icon="Delete" divided>{{ t('files.delete') }}</el-dropdown-item>
+                    <el-dropdown-item command="ai-analyze" icon="MagicStick" divided>✨ AI分析</el-dropdown-item>
                   </template>
                   <template v-else>
                     <el-dropdown-item command="rename" icon="Edit">{{ t('files.rename') }}</el-dropdown-item>
@@ -243,6 +249,7 @@
     'delete-file': [file: FileItem]
     'rename-dir': [folder: FolderItem]
     'delete-dir': [folder: FolderItem]
+    'ai-analyze': [file: FileItem]
   }>()
 
   // 使用响应式检测 composable
@@ -328,6 +335,9 @@
           break
         case 'delete':
           emit('delete-file', row as FileItem)
+          break
+        case 'ai-analyze':
+          emit('ai-analyze', row as FileItem)
           break
       }
     }

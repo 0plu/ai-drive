@@ -1,0 +1,17 @@
+./api_key_repo.go
+./disk_repo.go
+./download_task_repo.go
+./factory.go
+./file_chunk_repo.go
+./file_info_repo.go
+./group_power_repo.go
+./group_repo.go
+./power_repo.go
+./recycled_repo.go
+./share_repo.go
+./sys_config_repo.go
+./upload_chunk_repo.go
+./upload_task_repo.go
+./user_files_repo.go
+./user_repo.go
+./virtual_path_repo.go

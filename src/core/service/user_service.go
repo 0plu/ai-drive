@@ -100,6 +100,70 @@ func (u *UserService) Login(username, password, challenge string) (*models.JsonR
 	return models.NewJsonResponse(200, "登录成功", res), nil
 }
 
+// RefreshToken 刷新当前会话Token
+func (u *UserService) RefreshToken(sessionToken string) (*models.JsonResponse, error) {
+	if sessionToken == "" {
+		return nil, fmt.Errorf("缺少认证信息")
+	}
+
+	cached, err := u.cacheLocal.Get(sessionToken)
+	if err != nil {
+		return nil, fmt.Errorf("登录已过期，请重新登录")
+	}
+
+	jwtToken, ok := cached.(string)
+	if !ok || jwtToken == "" {
+		return nil, fmt.Errorf("Token无效")
+	}
+
+	claims, _ := auth.ParseToken(jwtToken)
+	if claims == nil {
+		return nil, fmt.Errorf("Token解析失败")
+	}
+	if claims.SessionID != "" && claims.SessionID != sessionToken {
+		return nil, fmt.Errorf("Token无效")
+	}
+
+	ctx := context.Background()
+	user, err := u.factory.User().GetByID(ctx, claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if user.State == 1 {
+		return nil, fmt.Errorf("用户已被禁用")
+	}
+
+	powers, err := u.factory.Power().GetByGroupID(ctx, user.GroupID)
+	if err != nil {
+		logger.LOG.Error("查询用户权限失败", "error", err)
+		return nil, err
+	}
+
+	user.Password = ""
+	user.FilePassword = ""
+	userLogin := response.UserLoginResponse{
+		Token: "",
+		User:  user,
+		Power: powers,
+	}
+
+	newSessionToken := uuid.New().String()
+	newJWT, err := auth.GenerateJWT(user.ID, newSessionToken, userLogin)
+	if err != nil {
+		logger.LOG.Error("刷新JWT失败", "error", err)
+		return nil, err
+	}
+
+	if err = u.cacheLocal.Set(newSessionToken, newJWT, 7300); err != nil {
+		return nil, err
+	}
+	_ = u.cacheLocal.Delete(sessionToken)
+
+	return models.NewJsonResponse(200, "刷新成功", map[string]string{
+		"token": newSessionToken,
+	}), nil
+}
+
 // Register 用户注册
 func (u *UserService) Register(req *request.UserRegisterRequest) (*models.JsonResponse, error) {
 	ctx := context.Background()
@@ -203,7 +267,7 @@ func (u *UserService) Register(req *request.UserRegisterRequest) (*models.JsonRe
 				return nil, fmt.Errorf("创建管理员组失败: %w", err)
 			}
 			group = adminGroup
-			
+
 			// 首次使用，自动创建默认权限并分配给管理员组
 			if err = u.initDefaultPowersForAdminGroup(ctx); err != nil {
 				logger.LOG.Warn("初始化默认权限失败", "error", err)
@@ -257,7 +321,7 @@ func (u *UserService) Register(req *request.UserRegisterRequest) (*models.JsonRe
 // 管理员需要拥有所有权限才能正常管理系统
 func (u *UserService) initDefaultPowersForAdminGroup(ctx context.Context) error {
 	logger.LOG.Info("首次注册：开始初始化所有权限并分配给管理员组")
-	
+
 	// 定义所有权限列表（根据数据库中的权限定义）
 	// 管理员应该拥有所有权限，包括用户管理、文件操作、磁盘管理等
 	allPowers := []struct {
@@ -273,12 +337,12 @@ func (u *UserService) initDefaultPowersForAdminGroup(ctx context.Context) error 
 		{"用户空间分配", "分配用户可用空间大小", "user:space"},
 		{"修改其他用户信息", "修改其他用户信息，包括密码", "user:update:else"},
 		{"用户密码修改", "修改用户自身密码", "user:update:password"},
-		
+
 		// 磁盘管理权限
 		{"挂载磁盘", "挂载系统可用磁盘", "disk:mount"},
 		{"删除挂载磁盘", "删除已经挂载的磁盘", "disk:delete"},
 		{"查看挂载磁盘", "查看已经挂载磁盘的信息", "disk:get"},
-		
+
 		// 文件操作权限
 		{"文件上传", "上传文件到磁盘", "file:upload"},
 		{"重命名文件", "重命名磁盘文件", "file:rechristen"},
@@ -290,32 +354,32 @@ func (u *UserService) initDefaultPowersForAdminGroup(ctx context.Context) error 
 		{"用户文件密码", "设置，修改文件密码", "file:update:filePassword"},
 		{"移动文件", "移动文件至其他虚拟目录", "file:move"},
 		{"删除文件", "删除文件（移动到回收站）", "file:delete"},
-		
+
 		// 目录操作权限
 		{"创建目录", "创建文件目录", "dir:create"},
 		{"删除目录", "删除已经存在的目录", "dir:delete"},
-		
+
 		// API Key管理权限
 		{"创建apikey", "创建当前用户权限的apikey", "apikey:create"},
 		{"删除apikey", "删除当前用户已存在的apikey", "apikey:delete"},
-		
+
 		// WebDAV访问权限
 		{"WebDAV访问", "允许通过WebDAV协议访问文件系统", "webdav:access"},
 	}
-	
+
 	// 获取所有现有权限
 	existingPowers, err := u.factory.Power().List(ctx, 0, 1000)
 	if err != nil {
 		logger.LOG.Error("查询现有权限失败", "error", err)
 		return fmt.Errorf("查询现有权限失败: %w", err)
 	}
-	
+
 	// 创建 characteristic 到 power 的映射
 	powerMap := make(map[string]*models.Power)
 	for _, p := range existingPowers {
 		powerMap[p.Characteristic] = p
 	}
-	
+
 	// 创建或获取权限，收集权限ID
 	powerIDs := make([]int, 0, len(allPowers))
 	maxID := 0
@@ -325,10 +389,10 @@ func (u *UserService) initDefaultPowersForAdminGroup(ctx context.Context) error 
 			maxID = p.ID
 		}
 	}
-	
+
 	for _, dp := range allPowers {
 		var power *models.Power
-		
+
 		// 检查权限是否已存在
 		if existingPower, ok := powerMap[dp.Characteristic]; ok {
 			power = existingPower
@@ -343,20 +407,20 @@ func (u *UserService) initDefaultPowersForAdminGroup(ctx context.Context) error 
 				Characteristic: dp.Characteristic,
 				CreatedAt:      custom_type.Now(),
 			}
-			
+
 			if err = u.factory.Power().Create(ctx, power); err != nil {
 				logger.LOG.Error("创建权限失败", "error", err, "characteristic", dp.Characteristic)
 				return fmt.Errorf("创建权限失败: %w", err)
 			}
-			
+
 			logger.LOG.Info("创建默认权限", "name", dp.Name, "characteristic", dp.Characteristic, "id", maxID)
 			// 更新 powerMap 以便后续检查
 			powerMap[dp.Characteristic] = power
 		}
-		
+
 		powerIDs = append(powerIDs, power.ID)
 	}
-	
+
 	// 将权限分配给管理员组（group_id=1）
 	groupPowers := make([]*models.GroupPower, 0, len(powerIDs))
 	for _, powerID := range powerIDs {
@@ -365,7 +429,7 @@ func (u *UserService) initDefaultPowersForAdminGroup(ctx context.Context) error 
 			PowerID: powerID,
 		})
 	}
-	
+
 	if len(groupPowers) > 0 {
 		if err = u.factory.GroupPower().BatchCreate(ctx, groupPowers); err != nil {
 			logger.LOG.Error("分配权限给管理员组失败", "error", err)
@@ -373,7 +437,7 @@ func (u *UserService) initDefaultPowersForAdminGroup(ctx context.Context) error 
 		}
 		logger.LOG.Info("成功将默认权限分配给管理员组", "count", len(groupPowers))
 	}
-	
+
 	return nil
 }
 

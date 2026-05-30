@@ -21,6 +21,7 @@ type MyObjConfig struct {
 	File     File     `toml:"file"`     // 文件配置
 	Cors     Cors     `toml:"cors"`     // 跨域配置
 	Cache    Cache    `toml:"cache"`    // 缓存配置
+	AI       AI       `toml:"ai"`       // AI配置
 	WebDAV   WebDAV   `toml:"webdav"`   // WebDAV配置
 }
 
@@ -121,6 +122,20 @@ type Cache struct {
 type Storage struct {
 	// Driver 存储驱动（local/aliyun/baidu等）
 	Driver string `toml:"driver"`
+}
+
+// AI AI服务配置
+type AI struct {
+	// Enable 是否启用AI服务
+	Enable bool `toml:"enable"`
+	// Endpoint OpenAI Compatible API 端点
+	Endpoint string `toml:"endpoint"`
+	// ApiKey API密钥
+	ApiKey string `toml:"api_key"`
+	// Model 模型名称
+	Model string `toml:"model"`
+	// Proxy AI 请求代理地址，留空则使用系统环境变量
+	Proxy string `toml:"proxy"`
 }
 
 // WebDAV WebDAV服务配置

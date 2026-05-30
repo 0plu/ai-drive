@@ -29,6 +29,12 @@ interface ImportMetaEnv {
   // API 配置（可选，根据实际需要添加）
   // readonly VITE_APP_BASE_API?: string
   // readonly VITE_APP_BASE_URL?: string
+
+  // ---- AI / OpenAI Compatible API ----
+  readonly VITE_AI_API_URL: string
+  readonly VITE_AI_API_KEY: string
+  readonly VITE_AI_MODEL: string
+  readonly VITE_AI_SYSTEM_PROMPT?: string
 }
 
 interface ImportMeta {

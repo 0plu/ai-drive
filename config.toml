@@ -69,6 +69,19 @@ pool_size = 10
 [storage]
 driver = "local"
 
+# AI 配置（用于文件智能分析等）
+[ai]
+# 是否启用 AI 服务
+enable = true
+# OpenAI Compatible API 端点
+endpoint = "https://api.deepseek.com/v1"
+# API 密钥
+api_key = "sk-b08ec6abaffb4059b4e4dc75124bf3c0"
+# 模型名称
+model = "deepseek-v4-flash"
+# 代理地址。当前网络直连 DeepSeek 443 会被系统拒绝，使用本机代理转发。
+proxy = "http://127.0.0.1:10809"
+
 # WebDAV 配置
 [webdav]
 # 是否启用 WebDAV 服务

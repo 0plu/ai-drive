@@ -10,6 +10,7 @@ import (
 	"myobj/src/pkg/cache"
 	"myobj/src/pkg/logger"
 	"myobj/src/pkg/models"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -30,6 +31,7 @@ func NewUserHandler(service *service.UserService, cacheLocal cache.Cache) *UserH
 func (u *UserHandler) Router(c *gin.RouterGroup) {
 	c.POST("/user/login", u.Login)
 	c.POST("/user/register", u.Register)
+	c.POST("/user/refresh", u.RefreshToken)
 	c.GET("/user/sysInfo", u.SysInit)
 	c.GET("/user/challenge", u.Challenge)
 
@@ -84,6 +86,41 @@ func (u *UserHandler) Login(c *gin.Context) {
 	data := login.Data.(response.UserLoginResponse)
 	c.SetCookie("Authorization", data.Token, 7*24*3600, "/", auth.GetCookieDomain(c.Request.Host), false, true)
 	c.JSON(200, login)
+}
+
+// RefreshToken godoc
+// @Summary 刷新Token
+// @Description 使用当前会话刷新JWT Token
+// @Tags 用户管理
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.JsonResponse{data=object} "刷新成功"
+// @Failure 200 {object} models.JsonResponse "Token无效或已过期"
+// @Router /user/refresh [post]
+func (u *UserHandler) RefreshToken(c *gin.Context) {
+	sessionToken := strings.TrimSpace(c.GetHeader("Authorization"))
+	if strings.HasPrefix(sessionToken, "Bearer ") {
+		sessionToken = strings.TrimSpace(strings.TrimPrefix(sessionToken, "Bearer "))
+	}
+	if sessionToken == "" {
+		if cookie, err := c.Request.Cookie("Authorization"); err == nil {
+			sessionToken = strings.TrimSpace(cookie.Value)
+		}
+	}
+	if sessionToken == "" {
+		c.JSON(200, models.NewJsonResponse(401, "缺少认证信息", nil))
+		return
+	}
+
+	result, err := u.service.RefreshToken(sessionToken)
+	if err != nil {
+		c.JSON(200, models.NewJsonResponse(401, err.Error(), nil))
+		return
+	}
+
+	data := result.Data.(map[string]string)
+	c.SetCookie("Authorization", data["token"], 7*24*3600, "/", auth.GetCookieDomain(c.Request.Host), false, true)
+	c.JSON(200, result)
 }
 
 // Register godoc

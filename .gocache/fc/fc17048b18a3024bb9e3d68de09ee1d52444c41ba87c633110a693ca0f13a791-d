@@ -1,0 +1,4 @@
+./http.go
+./osfile.go
+./provider.go
+./resource.go

@@ -7,5 +7,6 @@ export enum StoreId {
   Auth = 'auth-store',
   App = 'app-store',
   Layout = 'layout-store',
-  TagsView = 'tags-view-store'
+  TagsView = 'tags-view-store',
+  Ai = 'ai-store'
 }

@@ -68,6 +68,7 @@
         @preview-file="handleFilePreview"
         @folder-action="handleFolderAction"
         @file-action="handleFileAction"
+        @ai-analyze="handleAIAnalyze"
       />
 
       <!-- 列表视图 -->
@@ -88,6 +89,7 @@
         @delete-file="handleDeleteFile"
         @rename-dir="handleRenameDir"
         @delete-dir="handleDeleteDir"
+        @ai-analyze="handleAIAnalyze"
       />
 
       <!-- 空状态 -->
@@ -295,12 +297,13 @@
   import { useMoveFile } from './composables/useMoveFile'
   import { useFileSearch } from './composables/useFileSearch'
 
-  import { useUserStore } from '@/stores'
+  import { useUserStore, useAiStore } from '@/stores'
 
   const { proxy } = getCurrentInstance() as ComponentInternalInstance
   const route = useRoute()
   const router = useRouter()
   const userStore = useUserStore()
+  const aiStore = useAiStore()
 
   const viewMode = ref<'grid' | 'list'>('grid')
 
@@ -447,6 +450,11 @@
   // 处理列表视图的删除目录事件
   const handleDeleteDir = (folder: FolderItem) => {
     handleFolderAction('delete', folder)
+  }
+
+  // 处理 AI 分析文件
+  const handleAIAnalyze = (file: FileItem) => {
+    aiStore.openFilePanel({ id: file.file_id, name: file.file_name, type: file.mime_type })
   }
 
   // 列表视图行双击处理

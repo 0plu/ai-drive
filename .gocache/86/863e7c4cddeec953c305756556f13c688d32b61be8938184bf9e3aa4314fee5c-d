@@ -1,0 +1,6 @@
+./aliases.go
+./aliases_go1.21.go
+./lockstats.go
+./mutex.go
+./rwmutex.go
+./sync.go

@@ -1,0 +1,272 @@
+<script setup>
+import { ref, nextTick } from 'vue';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
+import cha_bg from '@/components/cha_bg.vue'
+import { useRouter } from 'vue-router'; import cha_navigation from '../components/cha_navigation.vue'
+import cha_sidebar from '../components/cha_sidebar.vue'
+
+
+const getAssetUrl = (path) => {
+  const modules = import.meta.glob('@/assets/**/*', { eager: true })
+  const imagePath = Object.keys(modules).find(key => key.includes(path))
+  return modules[imagePath]?.default || ''
+}
+
+const paths = [
+  { icon: getAssetUrl('public/茶的起源.png'), path: "/know" },
+  { icon: getAssetUrl('public/生长基础.png'), path: "/shengzhang" },
+  { icon: getAssetUrl('public/制作过程.png'), path: "/zhizuo" },
+  { icon: getAssetUrl('public/六大茶类.png'), path: "/liu" },
+]
+
+const steps = ref([
+  { imageUrl: getAssetUrl('know/1.png') },
+  { imageUrl: getAssetUrl('know/2.png') },
+  { imageUrl: getAssetUrl('know/3.png') },
+  { imageUrl: getAssetUrl('know/4.png') },
+  { imageUrl: getAssetUrl('know/5.png') },
+  { imageUrl: getAssetUrl('know/6.png') },
+  { imageUrl: getAssetUrl('know/7.png') },
+  { imageUrl: getAssetUrl('know/8.png') },
+  { imageUrl: getAssetUrl('know/9.png') },
+  { imageUrl: getAssetUrl('know/9.png') },
+
+]);
+
+const activeIndex = ref(0);
+const texts = [
+  "神农时期",
+  "先秦时期",
+  "汉代",
+  "三国魏晋时期",
+  "唐代",
+  "宋元时期",
+  "明代",
+  "清代",
+  ""
+]
+const textsIntro = [
+  "《神农本草经》中记载“神农尝百草，日遇七十二毒，得茶而解之。 ” 传说神农遍尝野草，在一次误食毒草后中毒晕倒了，喝了茶水才得以解毒，神农得此仙草，惊喜万分，将其命名为“茶”。",
+  "公元前316年秦灭蜀之前，茶叶的饮用主要局限于四川一隅。秦人取蜀后，随着国家的统一和各地交流的加强，茶的饮用和茶业逐渐扩展到适合茶树栽培的江南地区，茶文化也由原始、简约而不断充实、丰富。",
+  "汉代，茶开始为更多人所接受，并在流通中逐渐成为商品。较早开始种茶、饮茶的巴蜀地区已经形成了专门交易茶叶的市场。汉代人的饮茶方式大抵是较为原始的羹煮法，即如同煮菜汤一般将茶叶与葱、姜、橘子等混煮。当时也尚未出现专用的烹茶、饮茶器具，往往一器多用。",
+  "三国魏晋时期，植茶区域与饮茶人群已明显扩大。南北朝时，上层社会以茶迎宾待客、祭祀神灵。北朝宫廷备有茶叶招待南方来的降臣与使节，而在属于南朝的地区，饮茶的习惯已相当普遍，并开始讲究烹茶时的用水和器具。",
+  "中唐以后，在我国大江南北、长城内外饮茶已蔚然成风;茶叶产区分布广泛，茶之名品不断涌现，丰富人们的饮食生活;文人士子把品茶、咏茶作为赏心乐事，以茶为主题的诗文创作成为风尚，更有茶文化专著问世，开茶书撰著之先河。中国茶文化在唐代进入盛世。",
+  "茶“兴于唐，盛于宋”，宋代在唐代茶文化的基础上拓宽了它的范围与内容。以贡茶为代表的茶饼制作非常精良。从王公贵族、文人墨客到僧道人士、市井百姓，社会各个阶层无不饮茶。茶风的炽盛，推动了茶馆的进一步发展，使宋代成为茶馆文化兴盛的第一个历史时期。",
+  "明代是古代茶文化创新变革的重要时代在茶叶栽种、加工技艺、品饮方式、茶器茶具、名茶名品及茶道理念等方面，都对后世产生了深刻的影响。化繁为简的散茶开创了茗饮艺术的新局面，使茶更贴近人们的日常生活也促成了茶具的推陈出新。",
+  "清代茶树栽培、茶叶加工技术逐渐完善，茶区面积扩大，产量提高。名茶纷纷涌现，品饮方式更趋多样。城乡茶馆、茶庄林立。无论在宫廷还是市井，茶都大受欢迎。此外，中国的茶叶开始大规模地出口欧洲。",
+]
+const swiperInstance = ref(null);
+
+const onSwiper = (swiper) => {
+  swiperInstance.value = swiper;
+  swiper.on('slideChange', () => {
+    activeIndex.value = swiper.activeIndex;
+  });
+};
+
+const router = useRouter();
+
+const navigateToPage = () => {
+  router.push('/qiyuan'); };
+const hoverIndex = ref(-1);
+
+const handleTextClick = async (textIndex) => {
+  try {
+    if (!swiperInstance.value) {
+      console.warn('Swiper实例未初始化');
+      return;
+    }
+
+    console.log('当前文本索引:', textIndex,
+      '总幻灯片数:', swiperInstance.value.slides.length,
+      'steps数据长度:', steps.value.length);
+
+    const targetSlideIndex = textIndex; // 如果texts和steps索引需要偏移则在此调整
+
+    const maxSlideIndex = swiperInstance.value.slides.length - 1;
+    const safeIndex = Math.max(0, Math.min(targetSlideIndex, maxSlideIndex));
+
+    swiperInstance.value.updateSlides();
+    swiperInstance.value.updateSize();
+    swiperInstance.value.updateProgress();
+
+    await nextTick();
+
+    swiperInstance.value.slideTo(safeIndex, 500, true);
+
+
+    setTimeout(() => {
+      console.log('当前活动索引:', swiperInstance.value.activeIndex,
+        '是否到达目标:', swiperInstance.value.activeIndex === safeIndex);
+    }, 600);
+  } catch (error) {
+    console.error('幻灯片跳转失败:', error);
+  }
+};
+</script>
+
+<template>
+  <cha_bg :bgImage="getAssetUrl('know/background.png')"></cha_bg>
+  <cha_navigation currentPath="/know"></cha_navigation>
+  <cha_sidebar :paths="paths" :currentIndex="1"></cha_sidebar>
+  <div class="pingfeng"></div>
+  <div class="swiper-container">
+    <swiper
+      :slides-per-view="'auto'"
+      :centered-slides="false"
+      :space-between="0"
+      @swiper="onSwiper"
+    >
+      <swiper-slide
+        v-for="(item, index) in steps"
+        :key="index"
+        class="timeline-slide"
+      >
+        <div class="image-container">
+          <img :src="item.imageUrl" class="slide-image" />
+          <span
+            @mouseenter="hoverIndex = index"
+            @mouseleave="hoverIndex = -1"
+            @click="handleTextClick(index)"
+            :class="[
+              `text text_${index + 1}`,
+              {
+                'active-text': index === activeIndex || index === hoverIndex,
+              },
+            ]"
+            >{{ texts[index] }}</span
+          >
+        </div>
+      </swiper-slide>
+    </swiper>
+  </div>
+  <span class="textIntro">
+    {{ textsIntro[activeIndex] }}
+  </span>
+  <div class="yongtu" @click="navigateToPage"></div>
+</template>
+
+<style scoped>
+.pingfeng {
+  width: 30%;
+  height: 52%;
+  position: absolute;
+  left: 5.9%;
+  top: 28.8%;
+  background-image: url(@/assets/know/装饰.png);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 2;
+}
+
+.swiper-container {
+  padding: 8vh 0;
+  margin: -8vh 0;
+  position: absolute;
+  top: 33.9%;
+  left: 35.8%;
+  width: 64.2%; 
+  height: 40.6%;
+  z-index: 2;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+.swiper-wrapper {
+  transform: translateX(200px);
+  transition-duration: 0ms !important;
+}
+.swiper {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.swiper-slide {
+  width: 34.9%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.slide-image {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  transform-origin: center center;
+}
+
+.swiper-slide-active .slide-image {
+  z-index: 2;
+}
+.text {
+  cursor: pointer;
+  color: #828b9e; 
+  transition: color 0.3s ease;
+}
+.active-text {
+  color: #6f4b45 !important; 
+  font-weight: bold; 
+}
+.timeline-slide:nth-child(odd) .text {
+  font-size: 1.4vw;
+  font-family: 'STXinwei';
+  position: absolute;
+  top: -8%;
+  left: 36.7%;
+}
+.timeline-slide:nth-child(even) .text {
+  font-size: 1.4vw;
+  font-family: 'STXinwei';
+  position: absolute;
+  bottom: -6%;
+  left: 36.7%;
+}
+.text_3 {
+  left: 43.7% !important;
+}
+.text_4 {
+  left: 30.7% !important;
+}
+.text_5,
+.text_7,
+.text_8 {
+  left: 42.7% !important;
+}
+.textIntro {
+  text-indent: 2em;
+  font-family: 'STXinwei';
+  font-size: 2vw;
+  position: absolute;
+  right: 10%;
+  bottom: 25%;
+  width: 50%;
+  height: 9%;
+  z-index: 3;
+}
+.yongtu {
+  cursor: pointer;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 8.6%;
+  height: 22.6%;
+  background-image: url(@/assets/know/茶的用途典故.png);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+.yongtu:hover {
+  transform: scale(1.1);
+}
+</style>

@@ -1,9 +1,75 @@
 // HTTP请求工具
-import { API_BASE_URL } from '@/config/api'
+import { API_BASE_URL, API_ENDPOINTS } from '@/config/api'
 import cache from '@/plugins/cache'
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, any>
+  _retry?: boolean
+  skipAuthRefresh?: boolean
+}
+
+interface UploadOptions {
+  onCancel?: (cancel: () => void) => void
+  _retry?: boolean
+}
+
+class AuthExpiredError extends Error {}
+
+let refreshTokenPromise: Promise<string> | null = null
+
+const AUTH_REFRESH_URL = API_ENDPOINTS.AUTH.REFRESH
+const AUTH_SKIP_REFRESH_URLS = new Set<string>(Object.values(API_ENDPOINTS.AUTH))
+
+const redirectToLogin = () => {
+  cache.local.remove('token')
+  window.location.href = '/login'
+}
+
+const shouldRefreshToken = (url: string, options: RequestConfig = {}) => {
+  const path = url.split('?')[0]
+  return !options._retry && !options.skipAuthRefresh && !AUTH_SKIP_REFRESH_URLS.has(path)
+}
+
+const extractToken = (data: any): string | null => {
+  return data?.token || data?.data?.token || null
+}
+
+const refreshAccessToken = async (): Promise<string> => {
+  if (!refreshTokenPromise) {
+    refreshTokenPromise = (async () => {
+      const token = cache.local.get('token')
+      const response = await fetch(API_BASE_URL + AUTH_REFRESH_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      })
+
+      let data: any
+      try {
+        data = await response.json()
+      } catch (e) {
+        data = {}
+      }
+
+      if (!response.ok || (data.code && data.code !== 200)) {
+        throw new Error(data.message || '登录已过期，请重新登录')
+      }
+
+      const newToken = extractToken(data)
+      if (!newToken) {
+        throw new Error(data.message || '刷新 token 失败')
+      }
+
+      cache.local.set('token', newToken)
+      return newToken
+    })().finally(() => {
+      refreshTokenPromise = null
+    })
+  }
+
+  return refreshTokenPromise
 }
 
 // 请求拦截器 - 添加token
@@ -32,9 +98,7 @@ const responseInterceptor = async <T = any>(response: Response): Promise<T> => {
     // 处理 HTTP 错误
     if (response.status === 401) {
       // 401: 未授权，需要登录
-      cache.local.remove('token')
-      window.location.href = '/login'
-      throw new Error(data.message || '登录已过期，请重新登录')
+      throw new AuthExpiredError(data.message || '登录已过期，请重新登录')
     }
     if (response.status === 403) {
       // 403: 禁止访问，已登录但无权限
@@ -48,9 +112,7 @@ const responseInterceptor = async <T = any>(response: Response): Promise<T> => {
     // 业务错误
     if (data.code === 401) {
       // 401: 未授权，需要登录
-      cache.local.remove('token')
-      window.location.href = '/login'
-      throw new Error(data.message || '登录已过期，请重新登录')
+      throw new AuthExpiredError(data.message || '登录已过期，请重新登录')
     }
     if (data.code === 403) {
       // 403: 禁止访问，已登录但无权限
@@ -85,6 +147,20 @@ const request = async <T = any>(url: string, options: RequestConfig = {}): Promi
   } catch (error: any) {
     if (error.name === 'AbortError') {
       throw new Error('请求已取消')
+    }
+    if (error instanceof AuthExpiredError && shouldRefreshToken(url, options)) {
+      try {
+        await refreshAccessToken()
+        return request<T>(url, {
+          ...options,
+          _retry: true
+        })
+      } catch {
+        redirectToLogin()
+      }
+    }
+    if (error instanceof AuthExpiredError) {
+      redirectToLogin()
     }
     throw error
   }
@@ -137,15 +213,39 @@ export const upload = <T = any>(
   file: File,
   outerParams: FormData,
   onProgress?: (percent: number, loaded?: number, total?: number) => void,
-  options: { onCancel?: (cancel: () => void) => void } = {}
+  options: UploadOptions = {}
 ): Promise<T> => {
-  const formData = outerParams
+  const formData = new FormData()
+  outerParams.forEach((value, key) => {
+    formData.append(key, value)
+  })
   formData.append('file', file)
 
   const token = cache.local.get('token')
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
+
+    const retryOrRejectAuthError = async (message?: string) => {
+      if (options._retry) {
+        redirectToLogin()
+        reject(new Error(message || '登录已过期，请重新登录'))
+        return
+      }
+
+      try {
+        await refreshAccessToken()
+        resolve(
+          await upload<T>(url, file, outerParams, onProgress, {
+            ...options,
+            _retry: true
+          })
+        )
+      } catch {
+        redirectToLogin()
+        reject(new Error(message || '登录已过期，请重新登录'))
+      }
+    }
 
     // 上传进度
     if (onProgress) {
@@ -166,9 +266,7 @@ export const upload = <T = any>(
           if (response.code && response.code !== 200) {
             if (response.code === 401) {
               // 401: 未授权，需要登录
-              cache.local.remove('token')
-              window.location.href = '/login'
-              reject(new Error(response.message || '登录已过期，请重新登录'))
+              retryOrRejectAuthError(response.message)
               return
             }
             if (response.code === 403) {
@@ -186,9 +284,7 @@ export const upload = <T = any>(
       } else {
         // 处理 HTTP 状态码错误
         if (xhr.status === 401) {
-          cache.local.remove('token')
-          window.location.href = '/login'
-          reject(new Error('登录已过期，请重新登录'))
+          retryOrRejectAuthError()
           return
         }
         if (xhr.status === 403) {
@@ -230,9 +326,8 @@ export const upload = <T = any>(
 
 // 文件下载
 export const download = async (url: string, filename: string): Promise<void> => {
-  const token = cache.local.get('token')
-
-  try {
+  const runDownload = async (retried = false): Promise<void> => {
+    const token = cache.local.get('token')
     const response = await fetch(API_BASE_URL + url, {
       method: 'GET',
       headers: {
@@ -243,8 +338,16 @@ export const download = async (url: string, filename: string): Promise<void> => 
     if (!response.ok) {
       // 处理 HTTP 状态码错误
       if (response.status === 401) {
-        cache.local.remove('token')
-        window.location.href = '/login'
+        if (!retried) {
+          try {
+            await refreshAccessToken()
+            return runDownload(true)
+          } catch {
+            redirectToLogin()
+          }
+        } else {
+          redirectToLogin()
+        }
         throw new Error('登录已过期，请重新登录')
       }
       if (response.status === 403) {
@@ -268,6 +371,10 @@ export const download = async (url: string, filename: string): Promise<void> => 
     a.click()
     document.body.removeChild(a)
     window.URL.revokeObjectURL(downloadUrl)
+  }
+
+  try {
+    await runDownload()
   } catch (error: any) {
     throw new Error(error.message || '下载失败')
   }

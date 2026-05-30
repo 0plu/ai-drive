@@ -66,6 +66,7 @@
                 {{ file.public ? t('files.cancelPublic') : t('files.setPublic') }}
               </el-dropdown-item>
               <el-dropdown-item command="delete" icon="Delete" divided>{{ t('files.delete') }}</el-dropdown-item>
+              <el-dropdown-item command="ai-analyze" icon="MagicStick" divided>AI 分析</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -121,6 +122,7 @@
     'preview-file': [file: FileItem]
     'folder-action': [command: string, folder: FolderItem]
     'file-action': [command: string, file: FileItem]
+    'ai-analyze': [file: FileItem]
   }>()
 
   // 使用响应式检测 composable
@@ -140,6 +142,8 @@
   const handleFileAction = (command: string, file: FileItem) => {
     if (command === 'preview') {
       emit('preview-file', file)
+    } else if (command === 'ai-analyze') {
+      emit('ai-analyze', file)
     } else {
       emit('file-action', command, file)
     }

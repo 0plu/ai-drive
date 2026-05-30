@@ -1,5 +1,8 @@
 <template>
   <div class="layout-container">
+    <!-- AI 助手面板 -->
+      <AIPanel v-model="aiStore.visible" />
+
     <!-- 背景图案 -->
     <BackgroundPattern :pattern="backgroundPattern" />
 
@@ -93,9 +96,11 @@
 
 <script setup lang="ts">
   import { Header, Sidebar, AppMain, TagsView } from './components'
-  import { useLayoutStore } from '@/stores'
+  import AIPanel from '@/components/ai/AIPanel.vue'
+  import { useLayoutStore, useAiStore } from '@/stores'
 
   const layoutStore = useLayoutStore()
+  const aiStore = useAiStore()
 
   // 初始化布局配置
   onMounted(() => {

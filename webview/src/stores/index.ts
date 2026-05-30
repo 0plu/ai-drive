@@ -10,6 +10,7 @@ export { useAuthStore } from './auth'
 export { useAppStore } from './app'
 export { useLayoutStore } from './layout'
 export { useTagsViewStore } from './tagsView'
+export { useAiStore } from './ai'
 
 // 导出类型
 export type { LayoutMode } from './layout'
