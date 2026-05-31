@@ -1,7 +1,0 @@
-./admin_request.go
-./ai_request.go
-./download_request.go
-./file_request.go
-./recycled_request.go
-./shares_request.go
-./user_request.go

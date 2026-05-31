@@ -1,7 +1,0 @@
-./doc.go
-./funcs.go
-./metrics.go
-./retry.go
-./tx.go
-./var-value.go
-./var.go

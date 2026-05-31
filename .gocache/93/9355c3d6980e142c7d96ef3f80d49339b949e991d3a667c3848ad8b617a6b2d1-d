@@ -1,8 +1,0 @@
-./admin_response.go
-./ai_response.go
-./download_response.go
-./file_response.go
-./page_response.go
-./recycled_response.go
-./shares_response.go
-./user_data.go

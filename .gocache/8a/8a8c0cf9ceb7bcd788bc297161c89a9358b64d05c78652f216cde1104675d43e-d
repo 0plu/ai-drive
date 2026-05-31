@@ -1,3 +1,0 @@
-./cache.go
-./local_cache.go
-./redis_cache.go

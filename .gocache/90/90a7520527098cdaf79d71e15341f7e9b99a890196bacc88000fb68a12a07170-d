@@ -1,6 +1,0 @@
-./igd_service.go
-./interface.go
-./log.go
-./registry.go
-./structs.go
-./upnp.go

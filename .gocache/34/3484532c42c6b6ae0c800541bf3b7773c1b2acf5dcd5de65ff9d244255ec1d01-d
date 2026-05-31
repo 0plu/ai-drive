@@ -1,5 +1,0 @@
-./client.go
-./http.go
-./peer.go
-./protocol.go
-./scrape.go

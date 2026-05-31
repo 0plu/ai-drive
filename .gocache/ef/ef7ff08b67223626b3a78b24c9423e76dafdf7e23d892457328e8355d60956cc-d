@@ -1,7 +1,0 @@
-./error.go
-./item.go
-./key.go
-./memory.go
-./put.go
-./store.go
-./target.go

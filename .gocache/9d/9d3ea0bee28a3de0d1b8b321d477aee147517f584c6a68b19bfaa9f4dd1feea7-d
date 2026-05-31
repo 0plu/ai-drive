@@ -1,8 +1,0 @@
-./chain.go
-./func.go
-./groupby.go
-./head.go
-./iterable.go
-./iterator.go
-./iterutils.go
-./n.go

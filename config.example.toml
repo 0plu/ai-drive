@@ -1,0 +1,73 @@
+[server]
+host = "0.0.0.0"
+port = 8080
+ssl = false
+api_key = true
+swagger = true
+
+[log]
+level = "debug"
+log_path = "./logs/"
+max_size = 10
+max_age = 7
+
+[database]
+type = "sqlite"
+host = "./libs/my_obj.db"
+# MySQL example:
+# type = "mysql"
+# host = "127.0.0.1"
+# port = 3306
+# user = "myobj"
+# password = "change-me"
+# db_name = "my_obj"
+max_open = 10
+max_idle = 5
+max_life = 60
+max_idle_life = 360
+
+[auth]
+# Replace with a strong random secret before running.
+secret = "CHANGE_ME_WITH_A_RANDOM_SECRET_AT_LEAST_32_CHARS"
+api_key = true
+jwt_expire = 24
+
+[file]
+thumbnail = true
+big_file_threshold = 1
+big_chunk_size = 1
+data_dir = "obj_data"
+temp_dir = "obj_temp"
+
+[cors]
+enable = true
+allow_origin = "*"
+allow_methods = "*"
+allow_headers = "*"
+allow_credentials = true
+expose_headers = "*"
+
+[cache]
+type = "local"
+host = "127.0.0.1"
+port = 6379
+password = ""
+db = 0
+pool_size = 10
+
+[storage]
+driver = "local"
+
+[ai]
+enable = false
+endpoint = "https://api.deepseek.com/v1"
+api_key = "CHANGE_ME_WITH_YOUR_AI_API_KEY"
+model = "deepseek-chat"
+# Optional. Leave empty unless your network requires a proxy.
+proxy = ""
+
+[webdav]
+enable = true
+host = "0.0.0.0"
+port = 8081
+prefix = "/dav"

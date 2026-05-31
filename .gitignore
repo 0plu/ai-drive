@@ -1,6 +1,40 @@
-/logs/
-/examples/
-/bin/
-.idea
-.vscode
-/obj_temp/
+# Local configuration and secrets
+config.toml
+*.local.toml
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Databases and local state
+libs/*.db
+libs/*.db-*
+*.sqlite
+*.sqlite3
+
+# Uploaded files and temporary storage
+obj_data/
+obj_temp/
+
+# Build outputs
+builds/
+bin/
+dist/
+webview/dist/
+
+# Dependency and tool caches
+.gocache/
+npm_cache/
+node_modules/
+webview/node_modules/
+
+# IDE/editor
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
