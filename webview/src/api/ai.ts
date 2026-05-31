@@ -38,11 +38,12 @@ interface JsonResponse<T> {
   data: T
 }
 
-const SUPPORTED_EXTENSIONS = ['txt', 'md', 'pdf']
+const SUPPORTED_EXTENSIONS = ['txt', 'md', 'pdf', 'docx']
 const MIME_TO_EXT: Record<string, string> = {
   'text/plain': 'txt',
   'text/markdown': 'md',
-  'application/pdf': 'pdf'
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
 }
 
 function getFileExtension(fileName: string): string {

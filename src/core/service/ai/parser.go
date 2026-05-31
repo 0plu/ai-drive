@@ -1,7 +1,10 @@
 package ai
 
 import (
+	"archive/zip"
+	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -68,6 +71,93 @@ func (pdfParser) Parse(filePath string) (string, error) {
 	return builder.String(), nil
 }
 
+// docxParser Word 文档解析
+type docxParser struct{}
+
+func (docxParser) Parse(filePath string) (string, error) {
+	reader, err := zip.OpenReader(filePath)
+	if err != nil {
+		return "", fmt.Errorf("打开DOCX文件失败: %w", err)
+	}
+	defer reader.Close()
+
+	var documentFile *zip.File
+	for _, file := range reader.File {
+		if file.Name == "word/document.xml" {
+			documentFile = file
+			break
+		}
+	}
+	if documentFile == nil {
+		return "", fmt.Errorf("DOCX正文内容不存在")
+	}
+
+	rc, err := documentFile.Open()
+	if err != nil {
+		return "", fmt.Errorf("读取DOCX正文失败: %w", err)
+	}
+	defer rc.Close()
+
+	content, err := parseDocxDocumentXML(rc)
+	if err != nil {
+		return "", err
+	}
+	if len(content) > maxContentLength {
+		content = content[:maxContentLength]
+	}
+	return content, nil
+}
+
+func parseDocxDocumentXML(r io.Reader) (string, error) {
+	decoder := xml.NewDecoder(r)
+	var builder strings.Builder
+	inText := false
+
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("解析DOCX正文失败: %w", err)
+		}
+		if builder.Len() >= maxContentLength {
+			break
+		}
+
+		switch t := token.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "t":
+				inText = true
+			case "tab":
+				builder.WriteString("\t")
+			case "br", "cr":
+				builder.WriteString("\n")
+			}
+		case xml.EndElement:
+			switch t.Name.Local {
+			case "t":
+				inText = false
+			case "p":
+				builder.WriteString("\n")
+			}
+		case xml.CharData:
+			if inText {
+				remaining := maxContentLength - builder.Len()
+				text := string(t)
+				if len(text) > remaining {
+					builder.WriteString(text[:remaining])
+				} else {
+					builder.WriteString(text)
+				}
+			}
+		}
+	}
+
+	return strings.TrimSpace(builder.String()), nil
+}
+
 // getParser 根据文件类型返回对应的解析器
 func getParser(fileType string) (fileParser, error) {
 	switch strings.ToLower(fileType) {
@@ -77,12 +167,16 @@ func getParser(fileType string) (fileParser, error) {
 		return textParser{}, nil
 	case "pdf":
 		return pdfParser{}, nil
+	case "docx":
+		return docxParser{}, nil
 	case "text/plain":
 		return textParser{}, nil
 	case "text/markdown":
 		return textParser{}, nil
 	case "application/pdf":
 		return pdfParser{}, nil
+	case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+		return docxParser{}, nil
 	default:
 		return nil, fmt.Errorf("暂不支持该文件类型 AI 分析")
 	}
